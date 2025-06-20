@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideoMeet - Video Conferencing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 140px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #e1e5e9;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+
+        .room-link {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px dashed #dee2e6;
+            display: none;
+        }
+
+        .room-link.show {
+            display: block;
+        }
+
+        .link-text {
+            word-break: break-all;
+            font-family: monospace;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 5px;
+            margin: 0.5rem 0;
+        }
+
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .copy-btn:hover {
+            background: #218838;
+        }
+
+        @media (max-width: 600px) {
+            .buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">📹 VideoMeet</div>
+        <p class="subtitle">Start or join a video conference instantly</p>
+        
+        <div class="form-group">
+            <label for="userName">Your Name</label>
+            <input type="text" id="userName" placeholder="Enter your name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="roomId">Room ID (optional)</label>
+            <input type="text" id="roomId" placeholder="Enter room ID to join existing room">
+        </div>
+
+        <div class="buttons">
+            <button class="btn btn-primary" onclick="createRoom()">Create New Room</button>
+            <button class="btn btn-secondary" onclick="joinRoom()">Join Room</button>
+        </div>
+
+        <div class="room-link" id="roomLink">
+            <h3>Room Created Successfully!</h3>
+            <p>Share this link with others:</p>
+            <div class="link-text" id="linkText"></div>
+            <button class="copy-btn" onclick="copyLink()">Copy Link</button>
+            <br><br>
+            <button class="btn btn-primary" onclick="enterRoom()">Enter Room</button>
+        </div>
+    </div>
+
+    <script>
+        let currentRoomId = '';
+        let currentRoomUrl = '';
+
+        async function createRoom() {
+            const userName = document.getElementById('userName').value.trim();
+            if (!userName) {
+                alert('Please enter your name');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/create-room', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                currentRoomId = data.roomId;
+                currentRoomUrl = window.location.origin + data.url;
+
+                document.getElementById('linkText').textContent = currentRoomUrl;
+                document.getElementById('roomLink').classList.add('show');
+            } catch (error) {
+                alert('Failed to create room. Please try again.');
+                console.error('Error:', error);
+            }
+        }
+
+        function joinRoom() {
+            const userName = document.getElementById('userName').value.trim();
+            const roomId = document.getElementById('roomId').value.trim();
+
+            if (!userName) {
+                alert('Please enter your name');
+                return;
+            }
+
+            if (!roomId) {
+                alert('Please enter a room ID');
+                return;
+            }
+
+            window.location.href = `/room/${roomId}?name=${encodeURIComponent(userName)}`;
+        }
+
+        function enterRoom() {
+            const userName = document.getElementById('userName').value.trim();
+            window.location.href = `/room/${currentRoomId}?name=${encodeURIComponent(userName)}`;
+        }
+
+        function copyLink() {
+            navigator.clipboard.writeText(currentRoomUrl).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.style.background = '#28a745';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#28a745';
+                }, 2000);
+            }).catch(() => {
+                alert('Failed to copy link. Please copy manually.');
+            });
+        }
+
+        // Allow Enter key to join room
+        document.getElementById('roomId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                joinRoom();
+            }
+        });
+
+        document.getElementById('userName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const roomId = document.getElementById('roomId').value.trim();
+                if (roomId) {
+                    joinRoom();
+                } else {
+                    createRoom();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
